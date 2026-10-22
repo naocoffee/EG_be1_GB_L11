@@ -13,6 +13,9 @@ const LOG_URL = "https://script.google.com/macros/s/AKfycbzmgGcLSJc50ijxHDKUCTmU
 // 最初に選べる問題数（収録問題数を超える数は「全問」の数に置きかえて表示）
 const COUNT_OPTIONS = [10, 20, 30];
 
+// 選択肢に表示するダミーの数（各問の dummies の中から，出題のたびにランダムに選ぶ）
+const DUMMY_COUNT = 2;
+
 // 指示文：問題の inst（なければ type）で選ばれる
 const INSTRUCTIONS = {
   blanks:       "日本語に合うように，（　）に入る語を選びなさい。動詞は枠内の語群から選ぶこと。",
@@ -25,9 +28,9 @@ const INSTRUCTIONS = {
 const BOX_1 = { box: "wake / catch / watch / find / get", choices: ["wake", "catch", "watch", "find", "get"] };
 const BOX_5 = { box: "eat / call / drive / trust / see",   choices: ["eat", "call", "drive", "trust", "see"] };
 
-// type: "form"   … template の {} に入る語の組み合わせを3択で選ぶ（answer と dummies 2つ，いずれも {} の数と同じ長さの配列）
+// type: "form"   … template の {} に入る語の組み合わせを3択で選ぶ（answer と dummies（候補を4つ。毎回2つをランダムに表示），いずれも {} の数と同じ長さの配列）
 // type: "order"  … chunks（語群）を並べかえ（answer が正しい順番）。文頭チャンクは小文字で保存し表示時に大文字化
-// type: "blanks" … template の {} ごとに選択。verb: true の空欄は語群（words の choices）から，それ以外は answer＋dummies の3択
+// type: "blanks" … template の {} ごとに選択。verb: true の空欄は語群（words の choices）から，それ以外は answer＋dummies（候補4つから毎回2つ）の3択
 // verb: ［ ］内に示す語句，words: 語群，ja: 問題文の日本語／状況，trans: 答え合わせ後に表示する訳，note: 答え合わせ後に表示する解説
 // 文頭の {} に入る語は小文字で保存（表示時に大文字化）
 
@@ -35,23 +38,23 @@ const QUESTIONS = [
   // ---- 1 ----
   { src: "1 ⑴", type: "blanks", words: BOX_1, ja: "彼女はテレビでサッカーの試合を見るために遅くまで起きていた。",
     template: "She stayed up late {} {} a soccer game on TV.",
-    blanks: [ { answer: "to", dummies: ["for", "in"] }, { answer: "watch", verb: true } ],
+    blanks: [ { answer: "to", dummies: ["for", "in", "at", "on"] }, { answer: "watch", verb: true } ],
     note: "〈to＋動詞の原形〉には「～するために」と目的を表す使い方がある（不定詞の副詞用法）。to watch a soccer game on TV で「テレビでサッカーの試合を見るために」。\nstay up late は「夜遅くまで起きている」。" },
   { src: "1 ⑵", type: "blanks", words: BOX_1, ja: "通りでタクシーを止めるには，手を挙げさえすればよい。",
     template: "{} {} a taxi on the street, just raise your hand.",
-    blanks: [ { answer: "to", dummies: ["for", "in"] }, { answer: "catch", verb: true } ],
+    blanks: [ { answer: "to", dummies: ["for", "in", "at", "on"] }, { answer: "catch", verb: true } ],
     note: "目的を表す〈to＋動詞の原形〉「～するために」を文の最初に置いた形。To catch a taxi で「タクシーをつかまえるために」。文頭なので To は大文字。\n「タクシーを止める」は，英語では catch（つかまえる）を使って表す。" },
   { src: "1 ⑶", type: "blanks", words: BOX_1, ja: "私たちはよい席を取るために劇場に急いだ。",
     template: "We hurried to the theater in {} {} {} good seats.",
-    blanks: [ { answer: "order", dummies: ["case", "fact"] }, { answer: "to", dummies: ["for", "of"] }, { answer: "get", verb: true } ],
+    blanks: [ { answer: "order", dummies: ["case", "fact", "time", "spite"] }, { answer: "to", dummies: ["for", "of", "at", "on"] }, { answer: "get", verb: true } ],
     note: "in order to ～ も「～するために」と目的を表す。to ～ だけよりも，目的であることがはっきり伝わる。in order to get good seats で「よい席を取るために」。\nhurry to ～ は「～へ急ぐ」。" },
   { src: "1 ⑷", type: "blanks", words: BOX_1, ja: "私は赤ちゃんを起こさないように静かに歩いた。",
     template: "I walked quietly so as {} {} {} the baby.",
-    blanks: [ { answer: "not", dummies: ["for", "no"] }, { answer: "to", dummies: ["for", "of"] }, { answer: "wake", verb: true } ],
+    blanks: [ { answer: "not", dummies: ["for", "no", "don’t", "without"] }, { answer: "to", dummies: ["for", "of", "at", "on"] }, { answer: "wake", verb: true } ],
     note: "「～しないように」は，to の直前に not を置いて not to ～ とする。so as not to ～ / in order not to ～ の形で使うことが多い。so as not to wake the baby で「赤ちゃんを起こさないように」。\nnot の位置（to の前）に注意。" },
   { src: "1 ⑸", type: "blanks", words: BOX_1, ja: "彼は家に帰って，玄関のドアが開いているのを見つけた。",
     template: "He came home {} {} the front door open.",
-    blanks: [ { answer: "to", dummies: ["for", "in"] }, { answer: "find", verb: true } ],
+    blanks: [ { answer: "to", dummies: ["for", "in", "at", "on"] }, { answer: "find", verb: true } ],
     note: "〈to＋動詞の原形〉が「（その結果）～した」という結果を表すことがある。came home to find ～ で「家に帰ると～だとわかった」。\nfind A open は「A が開いているのに気づく」。" },
 
   // ---- 2 ----
@@ -112,46 +115,46 @@ const QUESTIONS = [
   // ---- 5 ----
   { src: "5 ⑴", type: "blanks", words: BOX_5, ja: "こんなに夜遅くにあなたに電話をしてすみません。",
     template: "I’m {} {} {} you so late at night.",
-    blanks: [ { answer: "sorry", dummies: ["glad", "happy"] }, { answer: "to", dummies: ["for", "of"] }, { answer: "call", verb: true } ],
+    blanks: [ { answer: "sorry", dummies: ["glad", "happy", "sad", "angry"] }, { answer: "to", dummies: ["for", "of", "at", "on"] }, { answer: "call", verb: true } ],
     note: "〈感情を表す語＋to＋動詞の原形〉で「～して（その気持ちだ）」と，その気持ちになった原因を表す。sorry to call you で「あなたに電話をしてすみません」。\nI’m は I am の短縮形。" },
   { src: "5 ⑵", type: "blanks", words: BOX_5, ja: "私は昨日，カフェであなたたち 2 人を見かけて驚いた。",
     template: "I was {} {} {} you two at the café yesterday.",
-    blanks: [ { answer: "surprised", dummies: ["sorry", "glad"] }, { answer: "to", dummies: ["for", "of"] }, { answer: "see", verb: true } ],
+    blanks: [ { answer: "surprised", dummies: ["sorry", "glad", "surprising", "surprise"] }, { answer: "to", dummies: ["for", "of", "at", "on"] }, { answer: "see", verb: true } ],
     note: "surprised to see ～ で「～を見て驚いた」。to see が，驚いた原因を表している。\nsurprised（驚いて）のほか，glad / happy / sad なども同じ形で使える。" },
   { src: "5 ⑶", type: "blanks", words: BOX_5, ja: "あの男を信じるなんて，私はばかだった。",
     template: "{} was foolish {} me {} {} that man.",
-    blanks: [ { answer: "it", dummies: ["this", "that"] }, { answer: "of", dummies: ["for", "to"] },
-              { answer: "to", dummies: ["for", "of"] }, { answer: "trust", verb: true } ],
+    blanks: [ { answer: "it", dummies: ["this", "that", "there", "what"] }, { answer: "of", dummies: ["for", "to", "at", "with"] },
+              { answer: "to", dummies: ["for", "of", "at", "on"] }, { answer: "trust", verb: true } ],
     note: "〈It is＋人の性質を表す語＋of＋人＋to＋動詞の原形〉で「～するとは（人）は…だ」。foolish（ばかな）のように人の性質を表す語のときは，for ではなく of を使う。\n過去の文なので It was foolish of me to trust that man。" },
   { src: "5 ⑷", type: "blanks", words: BOX_5, ja: "野菜をたくさん食べるとは，あなたは賢明だ。",
     template: "It is smart {} you {} {} a lot of vegetables.",
-    blanks: [ { answer: "of", dummies: ["for", "to"] }, { answer: "to", dummies: ["for", "of"] }, { answer: "eat", verb: true } ],
+    blanks: [ { answer: "of", dummies: ["for", "to", "at", "with"] }, { answer: "to", dummies: ["for", "of", "at", "on"] }, { answer: "eat", verb: true } ],
     note: "⑶と同じく〈It is＋人の性質を表す語＋of＋人＋to＋動詞の原形〉の形。smart（賢い）は人の性質を表すので of you。\nfor を使うのは，easy / difficult など「行為の性質」を表す語のとき。" },
   { src: "5 ⑸", type: "blanks", words: BOX_5, ja: "私たちを車で家まで送ってくれるとは，アンはとても親切だった。",
     template: "Ann was very {} {} {} us home.",
-    blanks: [ { answer: "kind", dummies: ["kindly", "kindness"] }, { answer: "to", dummies: ["for", "of"] }, { answer: "drive", verb: true } ],
+    blanks: [ { answer: "kind", dummies: ["kindly", "kindness", "kinds", "kinder"] }, { answer: "to", dummies: ["for", "of", "at", "on"] }, { answer: "drive", verb: true } ],
     note: "〈人＋be動詞＋kind to＋動詞の原形〉で「～するとは（人）は親切だ」。was very kind to drive us home で「私たちを車で家まで送ってくれるとはとても親切だった」。\ndrive A home は「A を車で家まで送る」。home は「家へ」という意味なので，to home とはしない。" },
 
   // ---- 6 ----
   { src: "6 ⑴", type: "form", ja: "その水は飲んでも安全です。", verb: "safe",
     template: "The water is {} {} {}.",
-    answer: ["safe", "to", "drink"], dummies: [["safe", "for", "drink"], ["safely", "to", "drink"]],
+    answer: ["safe", "to", "drink"], dummies: [["safe", "for", "drink"], ["safely", "to", "drink"], ["safe", "to", "drinking"], ["safety", "to", "drink"]],
     note: "〈安全・難しさなどを表す語＋to＋動詞の原形〉で「～するのに…だ」。safe to drink で「飲むのに安全だ（飲んでも安全だ）」。\nbe動詞のあとなので safe（形容詞）を使い，safely（副詞）は使わない。" },
   { src: "6 ⑵", type: "form", ja: "私の担任の先生は話しかけやすい。", verb: "talk",
     template: "My homeroom teacher is {} {} {} to.",
-    answer: ["easy", "to", "talk"], dummies: [["easy", "to", "talking"], ["easily", "to", "talk"]],
+    answer: ["easy", "to", "talk"], dummies: [["easy", "to", "talking"], ["easily", "to", "talk"], ["easy", "for", "talk"], ["easy", "to", "talked"]],
     note: "easy to talk to で「話しかけやすい」。最後の to は，talk to my teacher（先生に話しかける）の to が残ったもの。\nto のあとは原形 talk。be動詞のあとなので easy（形容詞）を使い，easily（副詞）は使わない。" },
   { src: "6 ⑶", type: "form", ja: "最近私は忙しすぎて，映画を観ることができない。", verb: "watch",
     template: "I’m {} busy {} {} movies these days.",
-    answer: ["too", "to", "watch"], dummies: [["very", "to", "watch"], ["too", "for", "watch"]],
+    answer: ["too", "to", "watch"], dummies: [["very", "to", "watch"], ["too", "for", "watch"], ["too", "to", "watching"], ["so", "to", "watch"]],
     note: "〈too … to＋動詞の原形〉で「…すぎて～できない」。too busy to watch movies で「忙しすぎて映画を観ることができない」。\nvery busy to ～ という形はない。these days は「最近」。" },
   { src: "6 ⑷", type: "form", ja: "この本は子どもが読むには難しすぎる。", verb: "for",
     template: "This book is {} difficult {} a child to {}.",
-    answer: ["too", "for", "read"], dummies: [["too", "of", "read"], ["very", "for", "read"]],
+    answer: ["too", "for", "read"], dummies: [["too", "of", "read"], ["very", "for", "read"], ["too", "for", "reading"], ["so", "for", "read"]],
     note: "〈too … for＋人＋to＋動詞の原形〉で「（人）が～するには…すぎる」。for a child は「子どもが」で，to read の動作をする人を表す（意味上の主語）。\ndifficult は人の性質ではなく行為の性質を表すので，of ではなく for を使う。" },
   { src: "6 ⑸", type: "form", ja: "彼はその天井に手が届くくらいの背の高さだった。", verb: "enough",
     template: "He was {} {} {} reach the ceiling.",
-    answer: ["tall", "enough", "to"], dummies: [["enough", "tall", "to"], ["tall", "enough", "for"]],
+    answer: ["tall", "enough", "to"], dummies: [["enough", "tall", "to"], ["tall", "enough", "for"], ["enough", "tall", "for"], ["tall", "enough", "of"]],
     note: "〈… enough to＋動詞の原形〉で「～するのに十分…」「～できるほど…」。tall enough to reach ～ で「～に届くほど背が高い」。\nenough は形容詞（tall）の後ろに置く。enough tall は誤り。" },
 
   // ---- 7 ----
@@ -246,6 +249,9 @@ function shuffle(arr) {
   }
   return a;
 }
+
+// ダミー候補から DUMMY_COUNT 個をランダムに選ぶ
+function pickDummies(list) { return shuffle(list).slice(0, DUMMY_COUNT); }
 
 function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 
@@ -343,7 +349,7 @@ function renderQuestion() {
   if (q.ja) html += `<p class="ja">${esc(q.ja)}</p>`;
 
   if (q.type === "form") {
-    if (!rec.options) rec.options = shuffle([q.answer, ...q.dummies]);
+    if (!rec.options) rec.options = shuffle([q.answer, ...pickDummies(q.dummies)]);
     const fills = rec.choice === undefined ? null : rec.options[rec.choice];
     const atStart = q.template.startsWith("{}");
     let i = 0;
@@ -360,7 +366,7 @@ function renderQuestion() {
 
   if (q.type === "blanks") {
     if (!rec.sels) rec.sels = q.blanks.map(() => "");
-    if (!rec.opts) rec.opts = q.blanks.map(b => b.verb ? (q.words ? q.words.choices : VERB_CHOICES) : shuffle([b.answer, ...b.dummies]));
+    if (!rec.opts) rec.opts = q.blanks.map(b => b.verb ? (q.words ? q.words.choices : VERB_CHOICES) : shuffle([b.answer, ...pickDummies(b.dummies)]));
     const atStart = q.template.startsWith("{}");
     let i = 0;
     const body = esc(q.template).replace(/\{\}/g, () => {
